@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RoboRecicla — Robótica com Materiais Recicláveis</title>
+<style>
+  :root {
+    --verde:#2d6a4f;--verde-claro:#52b788;--verde-pale:#d8f3dc;
+    --laranja:#e76f51;--laranja-claro:#f4a261;--laranja-pale:#fde8df;
+    --azul:#1d6fa4;--azul-claro:#48cae4;--azul-pale:#caf0f8;
+    --roxo:#6d3daa;--roxo-claro:#b185db;--roxo-pale:#ede0fb;
+    --amarelo:#d4a017;--amarelo-claro:#f5c842;--amarelo-pale:#fef5d0;
+    --cinza:#4a4e69;--cinza-claro:#9a8c98;--cinza-pale:#f2eff5;
+    --bg:#f8f9fa;--texto:#1a1a2e;--texto2:#555577;--borda:#e0dde8;
+    --ghost:#ddd9ee;--ghost-s:#b8b4cc;
+    --font-display:'Fredoka One','Nunito',cursive;
+    --font-body:'Nunito','Segoe UI',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--texto);font-family:var(--font-body);}
+  @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap');
+
+  .hero{background:linear-gradient(135deg,#1a1a2e 0%,#2d3561 50%,#1a1a2e 100%);color:white;text-align:center;padding:48px 20px 40px;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 50%,rgba(82,183,136,.15) 0%,transparent 60%),radial-gradient(circle at 70% 30%,rgba(72,202,228,.12) 0%,transparent 50%);}
+  .hero-badge{display:inline-block;background:var(--verde-claro);color:#0a3d20;font-family:var(--font-body);font-weight:800;font-size:12px;letter-spacing:1.5px;padding:4px 14px;border-radius:20px;text-transform:uppercase;margin-bottom:16px;}
+  .hero h1{font-family:var(--font-display);font-size:clamp(2.2rem,6vw,3.8rem);line-height:1.1;margin-bottom:12px;position:relative;}
+  .hero h1 span{color:var(--amarelo-claro);}
+  .hero p{font-size:1.05rem;color:rgba(255,255,255,.75);max-width:520px;margin:0 auto 24px;}
+  .hero-tags{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:relative;}
+  .hero-tag{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);color:white;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;}
+
+  .nav-tabs{display:flex;background:white;border-bottom:2px solid var(--borda);overflow-x:auto;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:50;}
+  .nav-tab{flex:1;min-width:120px;padding:14px 10px;text-align:center;font-weight:700;font-size:13px;cursor:pointer;border:none;background:none;color:var(--texto2);transition:all .2s;border-bottom:3px solid transparent;white-space:nowrap;}
+  .nav-tab.active{color:var(--verde);border-bottom-color:var(--verde);background:var(--verde-pale);}
+  .nav-tab:hover:not(.active){background:var(--cinza-pale);}
+
+  .section{display:none;padding:28px 16px 48px;max-width:940px;margin:0 auto;}
+  .section.active{display:block;}
+  .sec-title{font-family:var(--font-display);font-size:1.8rem;color:var(--texto);margin-bottom:6px;}
+  .sec-sub{color:var(--texto2);font-size:.95rem;margin-bottom:24px;}
+
+  /* MATERIAIS */
+  .materiais-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .material-card{background:white;border-radius:16px;border:2px solid var(--borda);overflow:hidden;transition:transform .2s,box-shadow .2s;cursor:pointer;}
+  .material-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.12);}
+  .material-card.selected{border-color:var(--verde);box-shadow:0 0 0 3px rgba(82,183,136,.3);}
+  .mat-header{padding:20px;display:flex;align-items:center;gap:14px;}
+  .mat-icon{width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+  .mat-info h3{font-size:1rem;font-weight:800;margin-bottom:2px;}
+  .mat-info p{font-size:.82rem;color:var(--texto2);}
+  .mat-usos{padding:0 20px 14px;display:flex;flex-wrap:wrap;gap:6px;}
+  .uso-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .mat-dica{margin:0 20px 16px;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;display:flex;gap:8px;align-items:flex-start;}
+
+  /* CONSTRUTOR */
+  .builder-wrap{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:640px){.builder-wrap{grid-template-columns:1fr;}}
+
+  .robot-canvas{background:white;border:2px solid var(--borda);border-radius:20px;padding:16px;display:flex;align-items:center;justify-content:center;transition:box-shadow .5s;}
+  .robot-canvas.complete{border-color:var(--amarelo-claro);box-shadow:0 0 0 4px rgba(245,200,66,.35);}
+  @keyframes pulseBorder{0%,100%{box-shadow:0 0 0 4px rgba(245,200,66,.35);}50%{box-shadow:0 0 0 7px rgba(245,200,66,.55);}}
+  .robot-canvas.complete{animation:pulseBorder 1.4s ease-in-out 4;}
+
+  #robotSVG rect.mat-part,#robotSVG circle.mat-part,#robotSVG ellipse.mat-part{transition:fill .45s ease,stroke .45s ease;}
+
+  .parts-panel{background:white;border:2px solid var(--borda);border-radius:20px;padding:20px;overflow-y:auto;max-height:520px;}
+  .parts-panel h3{font-weight:800;margin-bottom:14px;}
+  .part-slot{background:var(--cinza-pale);border-radius:10px;padding:12px;margin-bottom:10px;}
+  .part-slot h4{font-size:12px;font-weight:800;text-transform:uppercase;color:var(--texto2);margin-bottom:8px;}
+  .part-slot h4 span{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;background:var(--ghost-s);}
+  .part-slot h4 span.filled-dot{background:var(--verde-claro);}
+  .part-btn{display:inline-block;padding:5px 11px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:none;margin:3px;transition:all .2s;color:white;}
+  .part-btn:hover{transform:scale(1.06);opacity:.92;}
+  .part-btn.selected-btn{outline:3px solid #1a1a2e;outline-offset:1px;}
+  .reset-btn{width:100%;padding:12px;border-radius:12px;border:none;background:var(--cinza-pale);color:var(--texto2);font-weight:700;font-size:14px;cursor:pointer;margin-top:12px;transition:all .2s;}
+  .reset-btn:hover{background:var(--borda);}
+
+  /* COMPLETION PANEL */
+  .completion-panel{display:none;margin-top:20px;background:white;border:3px solid var(--amarelo-claro);border-radius:20px;padding:24px;text-align:center;}
+  .completion-panel h2{font-family:var(--font-display);font-size:1.8rem;color:var(--texto);margin-bottom:8px;}
+  .completion-panel p{color:var(--texto2);font-size:.95rem;margin-bottom:16px;}
+  .completion-legend{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px;}
+  .leg-item{display:flex;align-items:center;gap:7px;background:var(--bg);border-radius:10px;padding:6px 12px;font-size:13px;font-weight:700;}
+  .leg-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0;}
+
+  /* DESC BOX */
+  .desc-box{margin-top:16px;padding:16px;background:white;border-radius:14px;border:2px solid var(--borda);}
+  .desc-box h3{font-size:.9rem;font-weight:800;margin-bottom:8px;}
+  #robotDesc{font-size:.88rem;color:var(--texto2);line-height:1.6;}
+
+  /* PROJETOS */
+  .proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+  .proj-card{background:white;border-radius:16px;border:2px solid var(--borda);padding:20px;transition:transform .2s;}
+  .proj-card:hover{transform:translateY(-3px);box-shadow:0 6px 20px rgba(0,0,0,.1);}
+  .proj-nivel{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800;margin-bottom:10px;}
+  .proj-card h3{font-size:1.05rem;font-weight:800;margin-bottom:6px;}
+  .proj-card p{font-size:.88rem;color:var(--texto2);margin-bottom:12px;line-height:1.5;}
+  .proj-materiais{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+  .proj-mat-tag{background:var(--cinza-pale);color:var(--texto2);padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;}
+  .proj-steps{list-style:none;}
+  .proj-steps li{padding:6px 0;border-bottom:1px solid var(--borda);font-size:12px;display:flex;gap:8px;color:var(--texto2);}
+  .proj-steps li:last-child{border-bottom:none;}
+  .step-num{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:white;}
+
+  /* BNCC */
+  .bncc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+  .bncc-card{background:white;border-radius:14px;border:2px solid var(--borda);padding:18px;}
+  .bncc-nivel{font-size:11px;font-weight:800;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+  .bncc-nivel-dot{width:8px;height:8px;border-radius:50%;}
+  .bncc-codes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .bncc-code{padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:monospace;}
+  .bncc-card p{font-size:13px;color:var(--texto2);line-height:1.5;}
+
+  footer{background:#1a1a2e;color:rgba(255,255,255,.5);text-align:center;padding:20px;font-size:12px;}
+  footer strong{color:rgba(255,255,255,.8);}
+
+  .cv{background:var(--verde);}.cvc{background:var(--verde-claro);}
+  .cl{background:var(--laranja);}.clc{background:var(--laranja-claro);}
+  .ca{background:var(--azul);}.cac{background:var(--azul-claro);}
+  .cr{background:var(--roxo);}.crc{background:var(--roxo-claro);}
+  .cam{background:var(--amarelo);}.camc{background:var(--amarelo-claro);}
+  .cc{background:var(--cinza);}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-badge">🌱 Educação + Tecnologia + Sustentabilidade</div>
+  <h1>Robo<span>Recicla</span></h1>
+  <p>Construa robôs incríveis com materiais recicláveis! Potes, caixas, tecidos e muito mais viram peças de engenharia.</p>
+  <div class="hero-tags">
+    <span class="hero-tag">♻️ Zero Lixo</span>
+    <span class="hero-tag">🤖 Robótica</span>
+    <span class="hero-tag">🛠️ Faça Você Mesmo</span>
+    <span class="hero-tag">📚 BNCC Computação</span>
+  </div>
+</div>
+
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="showSection('materiais',this)">📦 Materiais</button>
+  <button class="nav-tab" onclick="showSection('construtor',this)">🤖 Construtor</button>
+  <button class="nav-tab" onclick="showSection('projetos',this)">🛠️ Projetos</button>
+  <button class="nav-tab" onclick="showSection('bncc',this)">📋 BNCC</button>
+</nav>
+
+<!-- MATERIAIS -->
+<section class="section active" id="materiais">
+  <h2 class="sec-title">Materiais Recicláveis</h2>
+  <p class="sec-sub">Clique em um material para ver como ele se transforma em peça de robô!</p>
+  <div class="materiais-grid" id="materiaisGrid"></div>
+</section>
+
+<!-- CONSTRUTOR -->
+<section class="section" id="construtor">
+  <h2 class="sec-title">Monte Seu Robô</h2>
+  <p class="sec-sub">Escolha os materiais para cada parte e veja o robô ganhar vida!</p>
+  <div class="builder-wrap">
+
+    <!-- SVG ROBOT -->
+    <div class="robot-canvas" id="robotCanvas">
+      <svg id="robotSVG" viewBox="0 0 280 412" width="100%" style="max-width:300px;display:block;margin:0 auto;">
+
+        <!-- fundo cena -->
+        <rect x="18" y="12" width="244" height="390" rx="22" fill="#f0ece4"/>
+        <!-- sombra chão -->
+        <ellipse cx="140" cy="400" rx="82" ry="9" fill="#00000014"/>
+
+        <!-- BASE / PÉS -->
+        <g id="svg-base">
+          <ellipse class="mat-part" cx="100" cy="385" rx="31" ry="13" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <ellipse class="mat-part" cx="180" cy="385" rx="31" ry="13" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <line x1="76" y1="381" x2="124" y2="381" stroke="#b8b4cc" stroke-width="1" opacity="0.6" id="base-line1"/>
+          <line x1="76" y1="387" x2="124" y2="387" stroke="#b8b4cc" stroke-width="1" opacity="0.6" id="base-line2"/>
+          <line x1="156" y1="381" x2="204" y2="381" stroke="#b8b4cc" stroke-width="1" opacity="0.6" id="base-line3"/>
+          <line x1="156" y1="387" x2="204" y2="387" stroke="#b8b4cc" stroke-width="1" opacity="0.6" id="base-line4"/>
+        </g>
+
+        <!-- PERNA ESQUERDA -->
+        <g id="svg-perna-e">
+          <rect class="mat-part" x="76" y="278" width="48" height="108" rx="22" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <line x1="82" y1="310" x2="118" y2="310" stroke="#b8b4cc" stroke-width="1.2" opacity="0.5"/>
+          <line x1="82" y1="338" x2="118" y2="338" stroke="#b8b4cc" stroke-width="1.2" opacity="0.5"/>
+        </g>
+
+        <!-- PERNA DIREITA -->
+        <g id="svg-perna-d">
+          <rect class="mat-part" x="156" y="278" width="48" height="108" rx="22" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <line x1="162" y1="310" x2="198" y2="310" stroke="#b8b4cc" stroke-width="1.2" opacity="0.5"/>
+          <line x1="162" y1="338" x2="198" y2="338" stroke="#b8b4cc" stroke-width="1.2" opacity="0.5"/>
+        </g>
+        <!-- joelhos sempre visíveis -->
+        <circle cx="100" cy="325" r="7" fill="#c8c4d4" stroke="#b0aac0" stroke-width="1"/>
+        <circle cx="180" cy="325" r="7" fill="#c8c4d4" stroke="#b0aac0" stroke-width="1"/>
+
+        <!-- CINTURA fixa -->
+        <rect x="68" y="260" width="144" height="24" rx="9" fill="#d3d1c7" stroke="#9a8a7a" stroke-width="1.5"/>
+
+        <!-- CORPO -->
+        <g id="svg-corpo">
+          <rect class="mat-part" x="54" y="134" width="172" height="132" rx="12" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="2"/>
+          <!-- display -->
+          <rect x="70" y="152" width="140" height="46" rx="6" fill="#1a1a2e"/>
+          <!-- botões -->
+          <circle cx="94" cy="218" r="9" fill="white" opacity="0.22"/>
+          <circle cx="140" cy="218" r="9" fill="white" opacity="0.22"/>
+          <circle cx="186" cy="218" r="9" fill="white" opacity="0.22"/>
+          <circle cx="94" cy="218" r="4" fill="white" opacity="0.18"/>
+          <circle cx="140" cy="218" r="4" fill="#52b788" opacity="0.5"/>
+          <circle cx="186" cy="218" r="4" fill="#48cae4" opacity="0.5"/>
+          <!-- recicla badge -->
+          <circle cx="206" cy="194" r="17" fill="white" opacity="0.22"/>
+        </g>
+
+        <!-- textos do display — sempre por cima do corpo -->
+        <text x="140" y="175" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="700" fill="white">ROBÔ</text>
+        <text x="140" y="192" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#48cae4" letter-spacing="2" font-weight="700">RECICLA</text>
+        <text x="206" y="199" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#2d6a4f" opacity="0.7">♻</text>
+
+        <!-- OMBROS fixos -->
+        <rect x="24" y="144" width="34" height="16" rx="7" fill="#d3d1c7" stroke="#9a8a7a" stroke-width="1"/>
+        <rect x="222" y="144" width="34" height="16" rx="7" fill="#d3d1c7" stroke="#9a8a7a" stroke-width="1"/>
+
+        <!-- BRAÇO ESQUERDO -->
+        <g id="svg-braco-e">
+          <rect class="mat-part" x="10" y="156" width="22" height="66" rx="10" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <rect class="mat-part" x="6"  y="217" width="20" height="54" rx="9"  fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <circle class="mat-part" cx="16" cy="282" r="16" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+        </g>
+
+        <!-- BRAÇO DIREITO -->
+        <g id="svg-braco-d">
+          <rect class="mat-part" x="248" y="156" width="22" height="66" rx="10" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <rect class="mat-part" x="254" y="217" width="20" height="54" rx="9"  fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+          <circle class="mat-part" cx="264" cy="282" r="16" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="1.5"/>
+        </g>
+
+        <!-- PESCOÇO fixo -->
+        <rect x="118" y="117" width="44" height="20" rx="6" fill="#d3d1c7" stroke="#9a8a7a" stroke-width="1.5"/>
+
+        <!-- ANTENAS sempre amarelas -->
+        <line x1="118" y1="27" x2="105" y2="8"  stroke="#d4a017" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="162" y1="27" x2="175" y2="8"  stroke="#d4a017" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="103" cy="6"  r="9" fill="#f5c842" stroke="#d4a017" stroke-width="1.5"/>
+        <circle cx="177" cy="6"  r="9" fill="#f5c842" stroke="#d4a017" stroke-width="1.5"/>
+
+        <!-- CABEÇA -->
+        <g id="svg-cabeca">
+          <rect class="mat-part" x="84" y="25" width="112" height="94" rx="22" fill="#ddd9ee" stroke="#b8b4cc" stroke-width="2"/>
+          <!-- highlight -->
+          <rect x="96" y="33" width="28" height="9" rx="4" fill="white" opacity="0.45"/>
+          <!-- olhos -->
+          <circle cx="120" cy="66" r="12" fill="#1a1a2e"/>
+          <circle cx="160" cy="66" r="12" fill="#1a1a2e"/>
+          <circle cx="123" cy="62" r="4.5" fill="white"/>
+          <circle cx="163" cy="62" r="4.5" fill="white"/>
+          <circle cx="124" cy="61" r="2" fill="#1a1a2e"/>
+          <circle cx="164" cy="61" r="2" fill="#1a1a2e"/>
+          <!-- boca sorriso -->
+          <path d="M 114 91 Q 140 105 166 91" fill="none" stroke="#1a1a2e" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+
+        <!-- PROGRESSO -->
+        <text id="svgProgress" x="140" y="408" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#9a8a98">0 / 7 peças selecionadas</text>
+      </svg>
+    </div>
+
+    <!-- PAINEL DE PEÇAS -->
+    <div class="parts-panel" id="partsPanel">
+      <h3>🔧 Escolha os Materiais</h3>
+    </div>
+  </div>
+
+  <!-- DESC -->
+  <div class="desc-box">
+    <h3>📝 Seu robô:</h3>
+    <p id="robotDesc">Selecione materiais para cada parte e veja o robô ganhar vida!</p>
+  </div>
+
+  <!-- PAINEL CONCLUSÃO -->
+  <div class="completion-panel" id="completionPanel">
+    <div style="font-size:2.5rem;margin-bottom:6px;">🎉</div>
+    <h2>Robô Completo!</h2>
+    <p>Incrível! Você montou um robô 100% com materiais recicláveis. Confira os materiais usados:</p>
+    <div class="completion-legend" id="completionLegend"></div>
+    <div style="margin-top:16px;padding:14px;background:var(--verde-pale);border-radius:12px;font-size:.88rem;color:var(--verde);font-weight:700;">
+      ♻️ Seu robô contribui para o meio ambiente! Todos os materiais foram reaproveitados.
+    </div>
+  </div>
+</section>
+
+<!-- PROJETOS -->
+<section class="section" id="projetos">
+  <h2 class="sec-title">Projetos para Fazer</h2>
+  <p class="sec-sub">Passo a passo para construir robôs reais com materiais recicláveis!</p>
+  <div class="proj-grid" id="projGrid"></div>
+</section>
+
+<!-- BNCC -->
+<section class="section" id="bncc">
+  <h2 class="sec-title">Alinhamento BNCC</h2>
+  <p class="sec-sub">Competências de Computação ativadas com robótica reciclável</p>
+  <div class="bncc-grid" id="bnccGrid"></div>
+</section>
+
+<footer>
+  <strong>Professor Sebastião Alves de Almeida</strong> &nbsp;·&nbsp; RoboRecicla — Plataforma EDUC &nbsp;·&nbsp; Araruama, RJ
+</footer>
+
+<script>
+const GHOST_FILL = '#ddd9ee';
+const GHOST_STR  = '#b8b4cc';
+
+const MAT_CORES = {
+  pote:     {fill:'#48cae4', stroke:'#0a7090', label:'Pote plástico',    hex:'#48cae4'},
+  caixa:    {fill:'#e76f51', stroke:'#993c1d', label:'Caixa de papelão', hex:'#e76f51'},
+  tecido:   {fill:'#b185db', stroke:'#6d3daa', label:'Retalho de tecido',hex:'#b185db'},
+  rolos:    {fill:'#b4b2a9', stroke:'#888780', label:'Rolo de papelão',  hex:'#b4b2a9'},
+  tampinha: {fill:'#52b788', stroke:'#2d6a4f', label:'Tampinha',         hex:'#52b788'},
+  palito:   {fill:'#f5c842', stroke:'#d4a017', label:'Palito / canudo',  hex:'#f5c842'},
+};
+
+const PARTE_LABEL = {
+  'cabeca':'🔵 Cabeça','corpo':'🟧 Corpo',
+  'braco-e':'💜 Braço Esq.','braco-d':'💜 Braço Dir.',
+  'perna-e':'⬜ Perna Esq.','perna-d':'⬜ Perna Dir.',
+  'base':'🟢 Base / Pés'
+};
+
+const PECAS_POR_PARTE = {
+  'cabeca':[
+    {nome:'Pote plástico',     mat:'pote',     cor:'#1d6fa4'},
+    {nome:'Caixinha quadrada', mat:'caixa',    cor:'#c05030'},
+    {nome:'Lata de alumínio',  mat:'rolos',    cor:'#4a4e69'},
+  ],
+  'corpo':[
+    {nome:'Caixa de sapato',   mat:'caixa',    cor:'#c05030'},
+    {nome:'Caixa de cereal',   mat:'caixa',    cor:'#d4742a'},
+    {nome:'Garrafa grande',    mat:'pote',     cor:'#1d6fa4'},
+  ],
+  'braco-e':[
+    {nome:'Retalho de tecido', mat:'tecido',   cor:'#6d3daa'},
+    {nome:'Canudo grosso',     mat:'palito',   cor:'#b07a10'},
+    {nome:'Mangueira fina',    mat:'rolos',    cor:'#4a4e69'},
+  ],
+  'braco-d':[
+    {nome:'Retalho de tecido', mat:'tecido',   cor:'#6d3daa'},
+    {nome:'Canudo grosso',     mat:'palito',   cor:'#b07a10'},
+    {nome:'Mangueira fina',    mat:'rolos',    cor:'#4a4e69'},
+  ],
+  'perna-e':[
+    {nome:'Rolo de papelão',   mat:'rolos',    cor:'#4a4e69'},
+    {nome:'Caixa comprida',    mat:'caixa',    cor:'#c05030'},
+    {nome:'Garrafa pet',       mat:'pote',     cor:'#1d6fa4'},
+  ],
+  'perna-d':[
+    {nome:'Rolo de papelão',   mat:'rolos',    cor:'#4a4e69'},
+    {nome:'Caixa comprida',    mat:'caixa',    cor:'#c05030'},
+    {nome:'Garrafa pet',       mat:'pote',     cor:'#1d6fa4'},
+  ],
+  'base':[
+    {nome:'4 Tampinhas',        mat:'tampinha', cor:'#2d6a4f'},
+    {nome:'Papelão reforçado',  mat:'caixa',    cor:'#c05030'},
+    {nome:'Rolo plano',         mat:'rolos',    cor:'#4a4e69'},
+  ],
+};
+
+const robotState = {};
+
+function atualizarSVGParte(parte, matKey) {
+  const c = MAT_CORES[matKey] || {fill:GHOST_FILL, stroke:GHOST_STR};
+  const g = document.getElementById('svg-' + parte);
+  if (!g) return;
+  g.querySelectorAll('.mat-part').forEach(el => {
+    el.setAttribute('fill', c.fill);
+    el.setAttribute('stroke', c.stroke);
+  });
+  // linhas decorativas nas pernas / base acompanham a cor do stroke
+  if (parte === 'perna-e') {
+    ['perna-e-l1','perna-e-l2'].forEach(id => {
+      const l = document.getElementById(id);
+      if(l) l.setAttribute('stroke', c.stroke);
+    });
+  }
+  if (parte === 'base') {
+    ['base-line1','base-line2','base-line3','base-line4'].forEach(id => {
+      const l = document.getElementById(id);
+      if(l) l.setAttribute('stroke', c.stroke);
+    });
+  }
+}
+
+function resetSVGParte(parte) {
+  const g = document.getElementById('svg-' + parte);
+  if (!g) return;
+  g.querySelectorAll('.mat-part').forEach(el => {
+    el.setAttribute('fill', GHOST_FILL);
+    el.setAttribute('stroke', GHOST_STR);
+  });
+}
+
+function selecionarPeca(parte, nome, cor, mat) {
+  robotState[parte] = {nome, cor, mat};
+  atualizarSVGParte(parte, mat);
+  // destaca botão selecionado
+  document.querySelectorAll('[data-parte="'+parte+'"]').forEach(b => b.classList.remove('selected-btn'));
+  const btn = document.querySelector('[data-parte="'+parte+'"][data-mat="'+mat+'"][data-nome="'+nome+'"]');
+  if(btn) btn.classList.add('selected-btn');
+  // dot do slot
+  const dot = document.getElementById('dot-'+parte.replace('-','_'));
+  if(dot) dot.classList.add('filled-dot');
+  atualizarProgresso();
+  atualizarDesc();
+  verificarCompleto();
+}
+
+function atualizarProgresso() {
+  const total = 7;
+  const filled = Object.values(robotState).filter(Boolean).length;
+  const el = document.getElementById('svgProgress');
+  if (el) el.textContent = filled + ' / ' + total + ' peças selecionadas';
+}
+
+function atualizarDesc() {
+  const partes = Object.keys(robotState).filter(k => robotState[k]);
+  if (!partes.length) {
+    document.getElementById('robotDesc').innerHTML = 'Selecione materiais para cada parte e veja o robô ganhar vida!';
+    return;
+  }
+  const nomes = partes.map(p => '<strong>' + PARTE_LABEL[p].split(' ').slice(1).join(' ') + '</strong>: ' + robotState[p].nome);
+  const filled = partes.length;
+  document.getElementById('robotDesc').innerHTML =
+    filled + '/7 partes montadas — ' + nomes.join(', ') + '.';
+}
+
+function verificarCompleto() {
+  const partes = ['cabeca','corpo','braco-e','braco-d','perna-e','perna-d','base'];
+  const completo = partes.every(p => robotState[p]);
+  const canvas = document.getElementById('robotCanvas');
+  const panel  = document.getElementById('completionPanel');
+
+  if (completo) {
+    canvas.classList.add('complete');
+    panel.style.display = 'block';
+    // legenda
+    const leg = document.getElementById('completionLegend');
+    leg.innerHTML = partes.map(p => {
+      const st = robotState[p];
+      const c  = MAT_CORES[st.mat] || {};
+      const label = PARTE_LABEL[p].split(' ').slice(1).join(' ');
+      return `<div class="leg-item"><span class="leg-dot" style="background:${c.hex}"></span>${label}: ${st.nome}</div>`;
+    }).join('');
+    panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+  } else {
+    canvas.classList.remove('complete');
+    panel.style.display = 'none';
+  }
+}
+
+function resetRobo() {
+  const partes = ['cabeca','corpo','braco-e','braco-d','perna-e','perna-d','base'];
+  partes.forEach(p => {
+    delete robotState[p];
+    resetSVGParte(p);
+    const dot = document.getElementById('dot-'+p.replace('-','_'));
+    if(dot) dot.classList.remove('filled-dot');
+  });
+  document.querySelectorAll('.selected-btn').forEach(b => b.classList.remove('selected-btn'));
+  document.getElementById('robotCanvas').classList.remove('complete');
+  document.getElementById('completionPanel').style.display = 'none';
+  document.getElementById('robotDesc').innerHTML = 'Selecione materiais para cada parte e veja o robô ganhar vida!';
+  document.getElementById('svgProgress').textContent = '0 / 7 peças selecionadas';
+}
+
+function renderConstrutor() {
+  const partes = [
+    {key:'cabeca',  label:'Cabeça'},
+    {key:'corpo',   label:'Corpo'},
+    {key:'braco-e', label:'Braço Esquerdo'},
+    {key:'braco-d', label:'Braço Direito'},
+    {key:'perna-e', label:'Perna Esquerda'},
+    {key:'perna-d', label:'Perna Direita'},
+    {key:'base',    label:'Base / Pés'},
+  ];
+  const panel = document.getElementById('partsPanel');
+  const safeKey = k => k.replace('-','_');
+  panel.innerHTML = `<h3>🔧 Escolha os Materiais</h3>` +
+    partes.map(p => {
+      const ops = PECAS_POR_PARTE[p.key] || [];
+      const sk  = safeKey(p.key);
+      return `<div class="part-slot">
+        <h4><span class="" id="dot-${sk}"></span>${p.label}</h4>
+        ${ops.map(o => `<button class="part-btn"
+          style="background:${o.cor}"
+          data-parte="${p.key}" data-mat="${o.mat}" data-nome="${o.nome}"
+          onclick="selecionarPeca('${p.key}','${o.nome}','${o.cor}','${o.mat}')">${o.nome}</button>`).join('')}
+      </div>`;
+    }).join('') +
+    `<button class="reset-btn" onclick="resetRobo()">🔄 Recomeçar</button>`;
+}
+
+/* ===== MATERIAIS ===== */
+const MATERIAIS = [
+  {id:'pote', nome:'Potes e Garrafas', icon:'🧴',
+   bg:'var(--azul-pale)', accent:'var(--azul)', usosCor:['ca','ca','cac','ca'],
+   desc:'Plástico resistente, fácil de furar e moldar.',
+   usos:['Cabeça do robô','Sensor','Compartimento','Olhos com LEDs'],
+   dica:'💡 Fure com alfinete aquecido para não rachar o plástico!',
+   dicaBg:'var(--azul-pale)', dicaColor:'var(--azul)'},
+  {id:'caixa', nome:'Caixas de Papelão', icon:'📦',
+   bg:'var(--laranja-pale)', accent:'var(--laranja)', usosCor:['cl','cl','clc','cl'],
+   desc:'Estrutura leve e fácil de recortar e colar.',
+   usos:['Corpo principal','Tronco','Caixa de controle','Base'],
+   dica:'💡 Reforce as bordas com fita adesiva para maior durabilidade!',
+   dicaBg:'var(--laranja-pale)', dicaColor:'var(--laranja)'},
+  {id:'tecido', nome:'Tecidos e Retalhos', icon:'🧵',
+   bg:'var(--roxo-pale)', accent:'var(--roxo)', usosCor:['cr','cr','crc','cr'],
+   desc:'Flexível, colorido e ótimo para revestimento.',
+   usos:['Revestimento','Articulações','Braços moles','Capa decorativa'],
+   dica:'💡 Use elástico costurado para criar juntas flexíveis!',
+   dicaBg:'var(--roxo-pale)', dicaColor:'var(--roxo)'},
+  {id:'tampinha', nome:'Tampinhas e Botões', icon:'🔵',
+   bg:'var(--verde-pale)', accent:'var(--verde)', usosCor:['cv','cv','cvc','cv'],
+   desc:'Pequenas peças perfeitas para detalhes e rodas.',
+   usos:['Rodas','Olhos','Botões de controle','Sensores'],
+   dica:'💡 Cole 4 tampas iguais para rodas perfeitas e simétricas!',
+   dicaBg:'var(--verde-pale)', dicaColor:'var(--verde)'},
+  {id:'palito', nome:'Palitos e Canudos', icon:'🥢',
+   bg:'var(--amarelo-pale)', accent:'var(--amarelo)', usosCor:['cam','cam','camc','cam'],
+   desc:'Estrutura interna leve e articulável.',
+   usos:['Esqueleto','Antenas','Braços articulados','Eixos'],
+   dica:'💡 Canudos com elástico interno criam braços que dobram!',
+   dicaBg:'var(--amarelo-pale)', dicaColor:'var(--amarelo)'},
+  {id:'rolos', nome:'Rolos e Tubos', icon:'🧻',
+   bg:'var(--cinza-pale)', accent:'var(--cinza)', usosCor:['cc','cc','cc','cc'],
+   desc:'Cilindros perfeitos para pernas e colunas.',
+   usos:['Pernas','Colunas','Pescoço','Eixo central'],
+   dica:'💡 Encaixe rolos de tamanhos diferentes para pernas articuladas!',
+   dicaBg:'var(--cinza-pale)', dicaColor:'var(--cinza)'},
+];
+
+function renderMateriais() {
+  document.getElementById('materiaisGrid').innerHTML = MATERIAIS.map(m => `
+    <div class="material-card" onclick="this.classList.toggle('selected')">
+      <div class="mat-header" style="background:${m.bg}">
+        <div class="mat-icon" style="background:${m.accent};font-size:26px">${m.icon}</div>
+        <div class="mat-info"><h3 style="color:${m.accent}">${m.nome}</h3><p>${m.desc}</p></div>
+      </div>
+      <div class="mat-usos">${m.usos.map((u,i)=>`<span class="uso-badge ${m.usosCor[i]}" style="color:white">${u}</span>`).join('')}</div>
+      <div class="mat-dica" style="background:${m.dicaBg};color:${m.dicaColor}">${m.dica}</div>
+    </div>`).join('');
+}
+
+/* ===== PROJETOS ===== */
+const PROJETOS = [
+  {titulo:'🤖 RobôLixo — Catador Separador',nivel:'Iniciante',nivelCor:'var(--verde)',nivelBg:'var(--verde-pale)',
+   desc:'Um robô que ajuda a separar o lixo reciclável! Usa cores para identificar cada tipo de resíduo.',
+   materiais:['Caixa de sapato','Potes plásticos','Tampinhas coloridas','Papelão'],
+   steps:['Corte a caixa de sapato em forma de robô (base)','Cole compartimentos menores para cada tipo de lixo','Decore com tampinhas coloridas (azul=papel, verde=vidro)','Adicione rótulos com o tipo de material','Crie uma "garra" com papelão dobrado para pegar objetos'],stepCor:'var(--verde)'},
+  {titulo:'🦾 BraçoBot — Garra Articulada',nivel:'Intermediário',nivelCor:'var(--azul)',nivelBg:'var(--azul-pale)',
+   desc:'Um braço mecânico que abre e fecha com linhas de pesca, imitando um braço robótico industrial.',
+   materiais:['Papelão grosso','Barbante / linha','Palitos de sorvete','Alfinetes'],
+   steps:['Recorte 3 segmentos de papelão (palma, antebraço, braço)','Una os segmentos com alfinetes como pinos de articulação','Passe barbante pelos furos superiores (tendões)','Puxe o barbante para fechar a "garra"','Teste pegando objetos leves como borrachas e lápis'],stepCor:'var(--azul)'},
+  {titulo:'🚗 RoboCar — Veículo Reciclado',nivel:'Intermediário',nivelCor:'var(--azul)',nivelBg:'var(--azul-pale)',
+   desc:'Um veículo movido a elástico construído com materiais recicláveis.',
+   materiais:['Caixa de leite','4 Tampinhas iguais','2 Palitos de churrasco','Elástico'],
+   steps:['Perfure os 4 cantos da caixa de leite para o eixo','Insira palitos de churrasco como eixos das rodas','Cole as tampinhas nos palitos com cola quente (rodas)','Prenda um elástico no eixo traseiro como motor','Dê corda e solte para ver o carro andar!'],stepCor:'var(--azul)'},
+  {titulo:'💡 RoboSensor — Alarme Inteligente',nivel:'Avançado',nivelCor:'var(--laranja)',nivelBg:'var(--laranja-pale)',
+   desc:'Um robô com "sensores" que reage ao toque com circuito simples de LED e pilha.',
+   materiais:['Pote transparente','Papelão','LED (3V)','Pilha AA','Fio de cobre','Papel alumínio'],
+   steps:['Monte o corpo do robô com caixa de papelão','Crie um circuito simples: pilha → LED → fio → sensor','Faça um "sensor de toque" com papel alumínio dobrado','Ao pressionar, os dois pedaços se tocam e acendem o LED','Encaixe tudo no pote transparente como cabeça iluminada'],stepCor:'var(--laranja)'},
+  {titulo:'🧵 RoboMole — Marionete Robótica',nivel:'Iniciante',nivelCor:'var(--verde)',nivelBg:'var(--verde-pale)',
+   desc:'Uma marionete com movimentos controlados por fios, simulando atuadores robóticos.',
+   materiais:['Retalhos de tecido','Rolos de papel','Barbante','Varetas de papelão'],
+   steps:['Costure ou cole os retalhos em forma de corpo de robô','Use rolos como pernas e braços cilíndricos','Faça furos nas articulações e passe barbante','Amarre os fios a varetas de papelão cruzadas','Movimente as varetas para o robô dançar!'],stepCor:'var(--verde)'},
+  {titulo:'🔊 RoboVoz — Amplificador Acústico',nivel:'Iniciante',nivelCor:'var(--verde)',nivelBg:'var(--verde-pale)',
+   desc:'Um robô que amplifica sons sem eletricidade usando apenas física e materiais recicláveis!',
+   materiais:['Cone de papel','Copo de plástico','Caixa de papelão','Rolo de papel higiênico'],
+   steps:['Faça um cone enrolando papel cartão grosso','Encaixe o cone na abertura do copo plástico','Coloque o celular dentro ou na frente do cone','Ouça o som amplificado sem nenhuma eletricidade','Monte um robô em volta com caixas e decore!'],stepCor:'var(--verde)'},
+];
+
+function renderProjetos() {
+  document.getElementById('projGrid').innerHTML = PROJETOS.map(p => `
+    <div class="proj-card">
+      <span class="proj-nivel" style="color:${p.nivelCor};background:${p.nivelBg}">${p.nivel}</span>
+      <h3>${p.titulo}</h3><p>${p.desc}</p>
+      <div class="proj-materiais">${p.materiais.map(m=>`<span class="proj-mat-tag">${m}</span>`).join('')}</div>
+      <ul class="proj-steps">${p.steps.map((s,i)=>`<li><span class="step-num" style="background:${p.stepCor}">${i+1}</span><span>${s}</span></li>`).join('')}</ul>
+    </div>`).join('');
+}
+
+/* ===== BNCC ===== */
+const BNCC_DATA = [
+  {nivel:'Educação Infantil',dot:'var(--verde)',dotBg:'var(--verde-pale)',codes:['EI03CO01','EI03CO03','EI03CO05'],codeBg:'var(--verde-pale)',codeColor:'var(--verde)',desc:'Explorar materiais e objetos, identificar propriedades físicas, criar sequências de ação e resolver problemas simples com objetos do cotidiano.'},
+  {nivel:'Fundamental I (1º–5º)',dot:'var(--azul)',dotBg:'var(--azul-pale)',codes:['EF15CO01','EF15CO02','EF15CO05','EF15CO08'],codeBg:'var(--azul-pale)',codeColor:'var(--azul)',desc:'Criar algoritmos para montar o robô, usar pensamento computacional para decompor o projeto em peças, entender hardware (estrutura física) do robô.'},
+  {nivel:'Fundamental II (6º–9º)',dot:'var(--roxo)',dotBg:'var(--roxo-pale)',codes:['EF69CO01','EF69CO03','EF69CO07','EF69CO10'],codeBg:'var(--roxo-pale)',codeColor:'var(--roxo)',desc:'Projetar sistemas físico-computacionais, entender sensores e atuadores, aplicar lógica de controle e trabalhar com prototipagem iterativa.'},
+  {nivel:'Ensino Médio',dot:'var(--laranja)',dotBg:'var(--laranja-pale)',codes:['EM13CO01','EM13CO05','EM13CO14','EM13CO19'],codeBg:'var(--laranja-pale)',codeColor:'var(--laranja)',desc:'Projetar robôs completos com IoT e automação, aplicar conceitos de IA em sistemas embarcados, discutir ética em tecnologia e sustentabilidade.'},
+];
+
+function renderBncc() {
+  document.getElementById('bnccGrid').innerHTML = BNCC_DATA.map(b=>`
+    <div class="bncc-card">
+      <div class="bncc-nivel"><span class="bncc-nivel-dot" style="background:${b.dot}"></span><span style="color:${b.dot}">${b.nivel}</span></div>
+      <div class="bncc-codes">${b.codes.map(c=>`<span class="bncc-code" style="background:${b.codeBg};color:${b.codeColor}">${c}</span>`).join('')}</div>
+      <p>${b.desc}</p>
+    </div>`).join('');
+}
+
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderMateriais();
+renderConstrutor();
+renderProjetos();
+renderBncc();
+</script>
+</body>
+</html>
